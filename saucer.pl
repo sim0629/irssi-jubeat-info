@@ -160,6 +160,9 @@ sub main {
     my @messages = execute($dbh, $sth);
 
     my $messages_count = @messages;
+    if($messages_count == 0) {
+        $callback->("[EMPTY]");
+    }
     for my $message (@messages) {
         $messages_count -= 1;
         if($messages_count == 0) {
