@@ -104,7 +104,13 @@ sub fetch {
 sub execute {
     my ($dbh, $command, $callback) = @_;
 
+    $dbh->{RaiseError} = 0;
     my $select = $dbh->prepare($command);
+    $dbh->{RaiseError} = 1;
+    if(!$select) {
+        $callback->("[Error] ".$dbh->errstr());
+        return;
+    };
     $select->execute();
     my $count = 0;
     while(my (@result) = $select->fetchrow_array()) {
