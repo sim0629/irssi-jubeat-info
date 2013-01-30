@@ -110,7 +110,7 @@ sub fetch {
 }
 
 sub execute {
-    my ($dbh, $sth, $callback) = @_;
+    my ($dbh, $sth) = @_;
 
     my @messages = ();
 
@@ -128,15 +128,9 @@ sub execute {
         push(@messages, $message);
     }
 
-    my $messages_count = @messages;
-    for my $message (@messages) {
-        $messages_count -= 1;
-        if($messages_count == 0) {
-            $message = "${message} [DONE]";
-        }
-        $callback->($message);
-    }
+    return @messages;
 }
+
 sub main {
     my ($command, $callback) = @_;
 
@@ -163,7 +157,16 @@ sub main {
     for my $user (@users) {
         fetch($dbh, $user);
     }
-    execute($dbh, $sth, $callback);
+    my @messages = execute($dbh, $sth);
+
+    my $messages_count = @messages;
+    for my $message (@messages) {
+        $messages_count -= 1;
+        if($messages_count == 0) {
+            $message = "${message} [DONE]";
+        }
+        $callback->($message);
+    }
 
     $dbh->disconnect();
 }
