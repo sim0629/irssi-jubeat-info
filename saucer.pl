@@ -110,12 +110,14 @@ sub execute {
     while(my (@result) = $select->fetchrow_array()) {
         $count += 1;
         if($count <= $MAX_NUM_OF_ROWS) {
-            $callback->(join(', ', @result));
+            $callback->("[${count}] ".join(', ', @result));
         }
     }
     my $suppressed_count = $count - $MAX_NUM_OF_ROWS;
     if($suppressed_count > 0) {
-        $callback->("${suppressed_count} more...");
+        $callback->("[Done] ${suppressed_count} more...");
+    }else {
+        $callback->("[Done]");
     }
 }
 
