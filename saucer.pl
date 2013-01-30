@@ -91,6 +91,7 @@ sub fetch {
             my $delta = 0;
             if($text =~ /^[\+\-]([0-9,]+)/) {
                 $delta = $1;
+                $delta =~ s/,//g;
             }
 
             $sth->execute(
