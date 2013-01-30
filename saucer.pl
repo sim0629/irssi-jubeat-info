@@ -10,12 +10,16 @@ my $CHANNEL = /^#jubeater$/i;
 my $MAX_NUM_OF_ROWS = 5;
 my $FLOOD_DELAY = 0.5;
 
-sub fetch {
-    my ($dbh, $user) = @_;
-    $user =~ s/^\s+//;
-    $user =~ s/\s+$//;
+sub quote {
+    my ($dbh, $identifier) = @_;
+    $identifier =~ s/^\s+//;
+    $identifier =~ s/\s+$//;
+    return $dbh->quote_identifier($identifier);
+}
 
-    my $safe_user = $dbh->quote_identifier($user);
+sub create_table {
+    my ($dbh, $user) = @_;
+    my $safe_user = quote($dbh, $user);
 
     $dbh->do("CREATE TABLE ${safe_user} (
          id INTEGER
@@ -26,7 +30,12 @@ sub fetch {
         ,fullcombo INTEGER
         ,rank INTEGER
         ,delta INTEGER
-    )");
+    )") or die $dbh->errstr();
+}
+
+sub fetch {
+    my ($dbh, $user) = @_;
+    my $safe_user = quote($dbh, $user);
 
     my $sth = $dbh->prepare("INSERT INTO ${safe_user} (
          id
@@ -46,13 +55,13 @@ sub fetch {
         ,?
         ,?
         ,?
-    )");
+    )") or die $dbh->errstr();
 
     my $request = HTTP::Request->new(GET => "http://saucer.isdev.kr/${user}/all-default");
     my $ua = LWP::UserAgent->new;
     $ua->agent('Mozilla/5.0');
     my $response = $ua->request($request);
-    return if (!$response->is_success);
+    die 'http request' if (!$response->is_success);
     my $string = $response->decoded_content;
     my $dom = Mojo::DOM->new;
     $dom->parse($string);
@@ -94,7 +103,7 @@ sub fetch {
                 ,$fullcombo
                 ,$rank
                 ,$delta
-            );
+            ) or die $dbh->errstr();
 
             $difficulty_number += 1;
         }
@@ -102,18 +111,11 @@ sub fetch {
 }
 
 sub execute {
-    my ($dbh, $command, $callback) = @_;
+    my ($dbh, $sth, $callback) = @_;
 
-    $dbh->{RaiseError} = 0;
-    my $select = $dbh->prepare($command);
-    $dbh->{RaiseError} = 1;
-    if(!$select) {
-        $callback->("[Error] ".$dbh->errstr());
-        return;
-    };
-    $select->execute();
+    $sth->execute() or die $dbh->errstr();
     my $count = 0;
-    while(my (@result) = $select->fetchrow_array()) {
+    while(my (@result) = $sth->fetchrow_array()) {
         $count += 1;
         if($count <= $MAX_NUM_OF_ROWS) {
             $callback->("[${count}] ".join(', ', @result));
@@ -128,23 +130,32 @@ sub execute {
 }
 
 sub main {
-    my $users_ref = shift;
-    my @users = @$users_ref;
-    my $command = shift;
-    my $callback = shift;
+    my ($command, $callback) = @_;
 
-    my $dbh = DBI->connect(
-        "dbi:SQLite:dbname=:memory:", "", "",
-        {
-            RaiseError => 1,
-            sqlite_unicode => 1,
+    my $dbh = DBI->connect("dbi:SQLite:dbname=:memory:", "", "")
+        or die $dbh->errstr();
+    $dbh->{PrintError} = 0;
+    $dbh->{sqlite_unicode} = 1;
+
+    my @users = ();
+    my $sth = undef;
+    until($sth = $dbh->prepare($command)) {
+        my $errstr = $dbh->errstr();
+        if($errstr =~ /no such table:(\s*)(\w+)/) {
+            my $user = $+;
+            create_table($dbh, $user);
+            push(@users, $user);
+        }else {
+            $callback->("[Error] ${errstr}");
+            return;
         }
-    );
+    }
+    $callback->("[Loading] ${command}");
 
     for my $user (@users) {
         fetch($dbh, $user);
     }
-    execute($dbh, $command, $callback);
+    execute($dbh, $sth, $callback);
 
     $dbh->disconnect();
 }
@@ -155,18 +166,15 @@ sub event_privmsg {
     return if $target !~ $CHANNEL;
 
     try {
-        return if $text !~ /\?(((\w+)\,)*((\w+) ))(\s*select.+)$/i;
-        my @users = split(/\,/, $1);
+        return if $text !~ /\?(select.+)$/i;
         my $command = $+;
-
-        $server->command("MSG ${target} [Loading] ${command}");
 
         my $irssi_callback = sub {
             my ($message) = @_;
             $server->command("MSG ${target} ${message}");
             Time::HiRes::sleep($FLOOD_DELAY);
         };
-        main(\@users, $command, $irssi_callback);
+        main($command, $irssi_callback);
     }catch {
         $server->command("MSG ${target} [Fail]");
         # TODO: error message
