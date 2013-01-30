@@ -6,7 +6,6 @@ use Mojo::DOM;
 use Time::HiRes;
 use Try::Tiny;
 
-my $CHANNEL = /^#jubeater$/i;
 my $MAX_NUM_OF_ROWS = 5;
 my $FLOOD_DELAY = 0.5;
 
@@ -163,7 +162,7 @@ sub main {
 sub event_privmsg {
     my ($server, $data, $nick, $address) = @_;
     my ($target, $text) = split(/ :/, $data, 2);
-    return if $target !~ $CHANNEL;
+    return if $target !~ /^#jubeater$/i;
 
     try {
         return if $text !~ /\?(select.+)$/i;
