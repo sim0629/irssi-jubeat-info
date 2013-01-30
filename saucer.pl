@@ -112,22 +112,31 @@ sub fetch {
 sub execute {
     my ($dbh, $sth, $callback) = @_;
 
+    my @messages = ();
+
     $sth->execute() or die $dbh->errstr();
     my $count = 0;
     while(my (@result) = $sth->fetchrow_array()) {
         $count += 1;
-        if($count <= $MAX_NUM_OF_ROWS) {
-            $callback->("[${count}] ".join(', ', @result));
-        }
+        next if($count > $MAX_NUM_OF_ROWS);
+        my $message = "[${count}] ".join(', ', @result);
+        push(@messages, $message);
     }
     my $suppressed_count = $count - $MAX_NUM_OF_ROWS;
     if($suppressed_count > 0) {
-        $callback->("[Done] ${suppressed_count} more...");
-    }else {
-        $callback->("[Done]");
+        my $message = "${suppressed_count} more...";
+        push(@messages, $message);
+    }
+
+    my $messages_count = @messages;
+    for my $message (@messages) {
+        $messages_count -= 1;
+        if($messages_count == 0) {
+            $message = "${message} [DONE]";
+        }
+        $callback->($message);
     }
 }
-
 sub main {
     my ($command, $callback) = @_;
 
