@@ -27,6 +27,7 @@ sub create_table {
         ,difficulty TEXT
         ,level INTEGER
         ,score INTEGER
+        ,rating TEXT
         ,fullcombo INTEGER
         ,rank INTEGER
         ,delta INTEGER
@@ -44,12 +45,14 @@ sub fetch {
         ,difficulty
         ,level
         ,score
+        ,rating
         ,fullcombo
         ,rank
         ,delta
         ,user_name
     ) VALUES (
          ?
+        ,?
         ,?
         ,?
         ,?
@@ -84,8 +87,10 @@ sub fetch {
 
             my $level = $td->at('.level')->text;
 
-            my $score = $td->at('.score')->text;
+            my $div_score = $td->at('.score');
+            my $score = $div_score->text;
             $score =~ s/,//g;
+            my $rating = $+ if $div_score->attrs('class') =~ /rating\-(\w+)/;
 
             my $div_bottom = $td->at('.bottom');
             my $rank = substr($div_bottom->text, 1);
@@ -105,6 +110,7 @@ sub fetch {
                 ,$difficulty
                 ,$level
                 ,$score
+                ,$rating
                 ,$fullcombo
                 ,$rank
                 ,$delta
