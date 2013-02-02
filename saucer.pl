@@ -1,4 +1,5 @@
-use Irssi;
+#!/usr/bin/perl
+
 use DBI qw(:sql_types);
 use HTTP::Request;
 use LWP::UserAgent;
@@ -201,4 +202,17 @@ sub event_privmsg {
     }
 }
 
-Irssi::signal_add("event privmsg", "event_privmsg");
+if(caller) {
+    require Irssi;
+    Irssi::signal_add("event privmsg", "event_privmsg");
+}else {
+    if(@ARGV < 1) {
+        die "no command";
+    }
+    binmode(STDOUT, ":utf8");
+    my $print_callback = sub {
+        my ($message) = @_;
+        print "${message}\n";
+    };
+    main(@ARGV[0], $print_callback);
+}
