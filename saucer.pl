@@ -105,15 +105,15 @@ sub fetch {
             }
 
             $sth->execute(
-                 $number.$difficulty_number
+                 int($number.$difficulty_number)
                 ,$name
                 ,$difficulty
-                ,$level
-                ,$score
+                ,int($level)
+                ,int($score)
                 ,$rating
-                ,$fullcombo
-                ,$rank
-                ,$delta
+                ,int($fullcombo)
+                ,int($rank)
+                ,int($delta)
                 ,$user_name
             ) or die $dbh->errstr();
 
