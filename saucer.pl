@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/perl -CA
 
 use DBI qw(:sql_types);
 use HTTP::Request;
