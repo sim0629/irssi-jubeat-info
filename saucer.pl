@@ -30,6 +30,7 @@ sub create_table {
         ,fullcombo INTEGER
         ,rank INTEGER
         ,delta INTEGER
+        ,user_name TEXT
     )") or die $dbh->errstr();
 }
 
@@ -46,8 +47,10 @@ sub fetch {
         ,fullcombo
         ,rank
         ,delta
+        ,user_name
     ) VALUES (
          ?
+        ,?
         ,?
         ,?
         ,?
@@ -65,6 +68,7 @@ sub fetch {
     my $string = $response->decoded_content;
     my $dom = Mojo::DOM->new;
     $dom->parse($string);
+    my $user_name = $dom->at('.user_name > span')->text;
     for my $tr ($dom->at('#music_list tbody')->find('tr')->each) {
         next if $tr->attrs('class') eq 'other';
         my $a_song = $tr->at('.title > a');
@@ -104,6 +108,7 @@ sub fetch {
                 ,$fullcombo
                 ,$rank
                 ,$delta
+                ,$user_name
             ) or die $dbh->errstr();
 
             $difficulty_number += 1;
