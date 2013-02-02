@@ -178,7 +178,12 @@ sub main {
 sub event_privmsg {
     my ($server, $data, $nick, $address) = @_;
     my ($target, $text) = split(/ :/, $data, 2);
-    return if $target !~ /^#jubeater$/i;
+
+    if($target =~ /^#/) {
+        return if $target !~ /^#jubeater$/i;
+    }else {
+        $target = $nick;
+    }
 
     try {
         return if $text !~ /\?(select.+)$/i;
