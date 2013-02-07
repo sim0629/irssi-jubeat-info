@@ -95,7 +95,7 @@ sub fetch {
             my $div_bottom = $td->at('.bottom');
             my $rank = substr($div_bottom->text, 1);
 
-            my $fullcombo = ($td->at('.mark')->text eq 'FC') ? 1 : 0;
+            my $fullcombo = ($td->at('.mark')->text eq 'FULL COMBO') ? 1 : 0;
 
             my $text = $td->at('.text')->text;
             my $delta = 0;
