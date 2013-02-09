@@ -77,7 +77,7 @@ sub fetch {
         my $a_song = $tr->at('.title > a');
 
         my $href = $a_song->attrs('href');
-        my $number = substr($href, rindex($href, '-') + 1);
+        my $number = substr($href, rindex($href, '_') + 1);
 
         my $name = $a_song->text;
 
