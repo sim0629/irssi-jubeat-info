@@ -178,6 +178,7 @@ sub main {
 
     my $messages_count = @messages;
     for my $message (@messages) {
+        Time::HiRes::sleep($FLOOD_DELAY);
         $messages_count -= 1;
         if($messages_count == 0) {
             $message = "${message} [DONE]";
@@ -205,7 +206,6 @@ sub event_privmsg {
         my $irssi_callback = sub {
             my ($message) = @_;
             $server->command("MSG ${target} ${message}");
-            Time::HiRes::sleep($FLOOD_DELAY);
         };
         main($command, $irssi_callback);
     }catch {
