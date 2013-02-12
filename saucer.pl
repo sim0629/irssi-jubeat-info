@@ -140,6 +140,10 @@ sub execute {
         my $message = "${suppressed_count} more...";
         push(@messages, $message);
     }
+    if($count == 0) {
+        my $message = "[EMPTY]";
+        push(@messages, $message);
+    }
 
     return @messages;
 }
@@ -173,9 +177,6 @@ sub main {
     my @messages = execute($dbh, $sth);
 
     my $messages_count = @messages;
-    if($messages_count == 0) {
-        $callback->("[EMPTY]");
-    }
     for my $message (@messages) {
         $messages_count -= 1;
         if($messages_count == 0) {
