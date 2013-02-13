@@ -74,7 +74,7 @@ sub fetch {
         ,?
     )") or die $dbh->errstr();
 
-    my $request = HTTP::Request->new(GET => "http://dev.apt-get.kr:20001/info/api.php?name=${user}&music_detail=1");
+    my $request = HTTP::Request->new(GET => "http://jubeat.apt-get.kr/saucer/api.php?name=${user}&music_detail=1");
     my $ua = LWP::UserAgent->new;
     $ua->agent('Mozilla/5.0');
     my $response = $ua->request($request);
