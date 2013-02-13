@@ -1,9 +1,11 @@
 #!/usr/bin/perl -CA
 
 use DBI qw(:sql_types);
+use Digest::MD5 qw(md5_hex);
+use Encode;
 use HTTP::Request;
+use JSON;
 use LWP::UserAgent;
-use Mojo::DOM;
 use Time::HiRes;
 use Try::Tiny;
 
@@ -22,15 +24,18 @@ sub create_table {
     my $safe_user = quote($dbh, $user);
 
     $dbh->do("CREATE TABLE ${safe_user} (
-         id INTEGER
-        ,name TEXT
+         id TEXT
+        ,music TEXT
         ,difficulty TEXT
-        ,level INTEGER
-        ,score INTEGER
-        ,rating TEXT
-        ,fullcombo INTEGER
-        ,rank INTEGER
-        ,delta INTEGER
+        ,score INT
+        ,date DATE
+        ,fc INT
+        ,artist TEXT
+        ,bpm TEXT
+        ,bpm_min INT
+        ,bpm_max INT
+        ,level INT
+        ,notecount INT
         ,user_name TEXT
     )") or die $dbh->errstr();
 }
@@ -41,14 +46,17 @@ sub fetch {
 
     my $sth = $dbh->prepare("INSERT INTO ${safe_user} (
          id
-        ,name
+        ,music
         ,difficulty
-        ,level
         ,score
-        ,rating
-        ,fullcombo
-        ,rank
-        ,delta
+        ,date
+        ,fc
+        ,artist
+        ,bpm
+        ,bpm_min
+        ,bpm_max
+        ,level
+        ,notecount
         ,user_name
     ) VALUES (
          ?
@@ -61,64 +69,54 @@ sub fetch {
         ,?
         ,?
         ,?
+        ,?
+        ,?
+        ,?
     )") or die $dbh->errstr();
 
-    my $request = HTTP::Request->new(GET => "http://saucer.isdev.kr/${user}/all-default");
+    my $request = HTTP::Request->new(GET => "http://dev.apt-get.kr:20001/info/api.php?name=${user}&music_detail=1");
     my $ua = LWP::UserAgent->new;
     $ua->agent('Mozilla/5.0');
     my $response = $ua->request($request);
     die 'http request' if (!$response->is_success);
     my $string = $response->decoded_content;
-    my $dom = Mojo::DOM->new;
-    $dom->parse($string);
-    my $user_name = $dom->at('.user_name > span')->text;
-    for my $tr ($dom->at('#music_list tbody')->find('tr')->each) {
-        next if $tr->attrs('class') eq 'other';
-        my $a_song = $tr->at('.title > a');
+    my $json = JSON::from_json($string);
+    my $user_name = $json->{"data"}->{"user_name"};
+    my $history = $json->{"data"}->{"history"};
+    foreach my $element (@$history) {
+        my $music = $element->{"music"};
+        my $difficulty = $element->{"difficulty"};
+        my $score = $element->{"score"};
+        my $date = $element->{"date"};
+        my $fc = $element->{"fc"};
+        my $artist = $element->{"artist"};
+        my $bpm = $element->{"bpm"};
+        my $level = $element->{"level"};
+        my $notecount = $element->{"notecount"};
 
-        my $href = $a_song->attrs('href');
-        my $number = substr($href, rindex($href, '_') + 1);
-
-        my $name = $a_song->text;
-
-        my $difficulty_number = 0;
-        for my $difficulty ('bsc', 'adv', 'ext') {
-            $td = $tr->at(".${difficulty}");
-
-            my $level = $td->at('.level')->text;
-
-            my $div_score = $td->at('.score');
-            my $score = $div_score->text;
-            $score =~ s/,//g;
-            my $rating = $+ if $div_score->attrs('class') =~ /rating\-(\w+)/;
-
-            my $div_bottom = $td->at('.bottom');
-            my $rank = substr($div_bottom->text, 1);
-
-            my $fullcombo = ($td->at('.mark')->text eq 'FULL COMBO') ? 1 : 0;
-
-            my $text = $td->at('.text')->text;
-            my $delta = 0;
-            if($text =~ /^[\+\-]([0-9,]+)/) {
-                $delta = $1;
-                $delta =~ s/,//g;
-            }
-
-            $sth->execute(
-                 int($number.$difficulty_number)
-                ,$name
-                ,$difficulty
-                ,int($level)
-                ,int($score)
-                ,$rating
-                ,int($fullcombo)
-                ,int($rank)
-                ,int($delta)
-                ,$user_name
-            ) or die $dbh->errstr();
-
-            $difficulty_number += 1;
+        my $id = substr(md5_hex(encode("utf8", $music), $difficulty), 0, 8);
+        my $bpm_min = $bpm;
+        my $bpm_max = $bpm;
+        if($bpm =~ /(\d+)-(\d+)/) {
+            $bpm_min = $1;
+            $bpm_max = $2;
         }
+
+        $sth->execute(
+             $id
+            ,$music
+            ,$difficulty
+            ,$score
+            ,$date
+            ,$fc
+            ,$artist
+            ,$bpm
+            ,$bpm_min
+            ,$bpm_max
+            ,$level
+            ,$notecount
+            ,$user_name
+        ) or die $dbh->errstr();
     }
 }
 
