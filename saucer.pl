@@ -187,10 +187,31 @@ sub select_query {
     $dbh->disconnect();
 }
 
+sub update_query {
+    my ($command, $callback) = @_;
+    if($command =~ /^(update\s+(\S+))(\s|$)/) {
+        my $real_command = $1;
+        my $name = $2;
+        my $result = "Fail";
+        my $request = PUT "http://jubeat.apt-get.kr/saucer/api.php",
+                          Content => "name=${name}";
+        my $ua = LWP::UserAgent->new;
+        $ua->agent('Mozilla/5.0');
+        my $response = $ua->request($request);
+        if($response->is_success) {
+            my $string = $response->decoded_content;
+            $result = "OK" if($string);
+        }
+        $callback->("[${result}] ${real_command}");
+    }
+}
+
 sub main {
     my ($command, $callback) = @_;
     if($command =~ /^select/) {
         select_query($command, $callback);
+    }elsif($command =~ /^update/) {
+        update_query($command, $callback);
     }
 }
 
