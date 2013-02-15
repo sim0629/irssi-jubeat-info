@@ -3,7 +3,7 @@
 use DBI qw(:sql_types);
 use Digest::MD5 qw(md5_hex);
 use Encode;
-use HTTP::Request;
+use HTTP::Request::Common;
 use JSON;
 use LWP::UserAgent;
 use Time::HiRes;
@@ -74,7 +74,7 @@ sub fetch {
         ,?
     )") or die $dbh->errstr();
 
-    my $request = HTTP::Request->new(GET => "http://jubeat.apt-get.kr/saucer/api.php?name=${user}&music_detail=1");
+    my $request = GET "http://jubeat.apt-get.kr/saucer/api.php?name=${user}&music_detail=1";
     my $ua = LWP::UserAgent->new;
     $ua->agent('Mozilla/5.0');
     my $response = $ua->request($request);
