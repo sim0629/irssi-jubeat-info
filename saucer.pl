@@ -146,7 +146,7 @@ sub execute {
     return @messages;
 }
 
-sub main {
+sub select_query {
     my ($command, $callback) = @_;
 
     my $dbh = DBI->connect("dbi:SQLite:dbname=:memory:", "", "")
@@ -187,6 +187,13 @@ sub main {
     $dbh->disconnect();
 }
 
+sub main {
+    my ($command, $callback) = @_;
+    if($command =~ /^select/) {
+        select_query($command, $callback);
+    }
+}
+
 sub event_privmsg {
     my ($server, $data, $nick, $address) = @_;
     my ($target, $text) = split(/ :/, $data, 2);
@@ -198,7 +205,7 @@ sub event_privmsg {
     }
 
     try {
-        return if $text !~ /\?(select.+)$/i;
+        return if $text !~ /\?(.+)$/i;
         my $command = $+;
 
         my $irssi_callback = sub {
