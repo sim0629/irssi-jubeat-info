@@ -37,6 +37,7 @@ sub create_table {
         ,level INT
         ,notecount INT
         ,user_name TEXT
+        ,great REAL
     )") or die $dbh->errstr();
 }
 
@@ -58,8 +59,10 @@ sub fetch {
         ,level
         ,notecount
         ,user_name
+        ,great
     ) VALUES (
          ?
+        ,?
         ,?
         ,?
         ,?
@@ -102,6 +105,9 @@ sub fetch {
             $bpm_max = $2;
         }
 
+        $great = (1000000 - $score) / ((900000 / $notecount) * 0.3);
+        $great = int($great * 10) / 10;
+
         $sth->execute(
              $id
             ,$music
@@ -116,6 +122,7 @@ sub fetch {
             ,$level
             ,$notecount
             ,$user_name
+            ,$great
         ) or die $dbh->errstr();
     }
 }
