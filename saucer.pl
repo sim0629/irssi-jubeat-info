@@ -105,8 +105,10 @@ sub fetch {
             $bpm_max = $2;
         }
 
-        $great = (1000000 - $score) / ((900000 / $notecount) * 0.3);
-        $great = int($great * 10) / 10;
+        if($notecount) {
+            $great = (1000000 - $score) / ((900000 / $notecount) * 0.3);
+            $great = int($great * 10) / 10;
+        }
 
         $sth->execute(
              $id
