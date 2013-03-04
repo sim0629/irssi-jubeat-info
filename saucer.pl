@@ -28,6 +28,7 @@ sub create_table {
         ,music TEXT
         ,difficulty TEXT
         ,score INT
+        ,rating TEXT
         ,date DATE
         ,fc INT
         ,artist TEXT
@@ -50,6 +51,7 @@ sub fetch {
         ,music
         ,difficulty
         ,score
+        ,rating
         ,date
         ,fc
         ,artist
@@ -62,6 +64,7 @@ sub fetch {
         ,great
     ) VALUES (
          ?
+        ,?
         ,?
         ,?
         ,?
@@ -110,11 +113,23 @@ sub fetch {
             $great = int($great * 10) / 10;
         }
 
+        my $rating = "";
+        if($score < 500000) { $rating = "E"; }
+        elsif($score < 700000) { $rating = "D"; }
+        elsif($score < 800000) { $rating = "C"; }
+        elsif($score < 850000) { $rating = "B"; }
+        elsif($score < 900000) { $rating = "A"; }
+        elsif($score < 950000) { $rating = "S"; }
+        elsif($score < 980000) { $rating = "SS"; }
+        elsif($score < 1000000) { $rating = "SSS"; }
+        else { $rating = "EXC"; }
+
         $sth->execute(
              $id
             ,$music
             ,$difficulty
             ,$score
+            ,$rating
             ,$date
             ,$fc
             ,$artist
