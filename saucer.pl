@@ -108,11 +108,13 @@ sub fetch {
             $bpm_max = $2;
         }
 
+        my $great;
         if($notecount) {
             $great = (1000000 - $score) / ((900000 / $notecount) * 0.3);
             $great = int($great * 10) / 10;
         }
 
+        my $rating;
         if($score) {
             if($score < 500000) { $rating = "E"; }
             elsif($score < 700000) { $rating = "D"; }
