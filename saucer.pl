@@ -192,6 +192,7 @@ sub select_query {
             push(@users, $user);
         }else {
             $callback->("[Error] ${errstr}");
+            $dbh->disconnect();
             return;
         }
     }
