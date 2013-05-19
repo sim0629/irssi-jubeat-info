@@ -154,20 +154,8 @@ sub execute {
     my @messages = ();
 
     $sth->execute() or die $dbh->errstr();
-    my $count = 0;
     while(my (@result) = $sth->fetchrow_array()) {
-        $count += 1;
-        next if($count > $MAX_NUM_OF_ROWS);
-        my $message = "[${count}] ".join(', ', @result);
-        push(@messages, $message);
-    }
-    my $suppressed_count = $count - $MAX_NUM_OF_ROWS;
-    if($suppressed_count > 0) {
-        my $message = "${suppressed_count} more...";
-        push(@messages, $message);
-    }
-    if($count == 0) {
-        my $message = "[EMPTY]";
+        my $message = join(', ', @result);
         push(@messages, $message);
     }
 
@@ -210,13 +198,21 @@ sub select_query {
     my @messages = execute($dbh, $sth);
 
     my $messages_count = @messages;
+    my $count = 0;
+
     for my $message (@messages) {
         Time::HiRes::sleep($FLOOD_DELAY);
-        $messages_count -= 1;
-        if($messages_count == 0) {
-            $message = "${message} [DONE]";
-        }
-        $callback->($message);
+        $count += 1;
+        $message .= " [DONE]" if($count == $messages_count);
+        $callback->("[${count}] $message");
+        last if($count >= $MAX_NUM_OF_ROWS);
+    }
+
+    if($messages_count == 0) {
+        $callback->("[EMPTY]");
+    }elsif($messages_count > $MAX_NUM_OF_ROWS) {
+        my $suppressed_count = $messages_count - $MAX_NUM_OF_ROWS;
+        $callback->("${suppressed_count} more...");
     }
 
     $dbh->disconnect();
