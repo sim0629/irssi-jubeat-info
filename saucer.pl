@@ -10,6 +10,7 @@ use Time::HiRes;
 use Try::Tiny;
 
 my $MAX_NUM_OF_ROWS = 5;
+my $MAX_COMMAND_DISPLAY_LENGTH = 20;
 my $FLOOD_DELAY = 0.5;
 
 sub quote {
@@ -194,7 +195,13 @@ sub select_query {
             return;
         }
     }
-    $callback->("[Loading] ${command}");
+    my $display_command = $command;
+    my $command_length = length($command);
+    if($command_length > $MAX_COMMAND_DISPLAY_LENGTH + 3) {
+        $display_command = substr($command, 0, $MAX_COMMAND_DISPLAY_LENGTH);
+        $display_command .= "...";
+    }
+    $callback->("[Loading] ${display_command}");
 
     for my $user (@users) {
         fetch($dbh, $user);
