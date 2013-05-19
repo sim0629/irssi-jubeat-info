@@ -211,8 +211,26 @@ sub select_query {
     if($messages_count == 0) {
         $callback->("[EMPTY]");
     }elsif($messages_count > $MAX_NUM_OF_ROWS) {
+        my $code = $command."\n\n".join("\n", @messages);
+        my $ua = LWP::UserAgent->new();
+        my $response = $ua->post(
+            "http://paste.neria.kr/index.php",
+            Content => [
+                "parent_id" => "",
+                "format" => "text",
+                "code2" => $code,
+                "poster" => "",
+                "paste" => "Submit",
+                "expiry" => "d",
+                "password" => ""
+            ]
+        );
+        my $url = "";
+        if($response->code == 302) {
+            $url = "http://paste.neria.kr/".($response->header("Location"));
+        }
         my $suppressed_count = $messages_count - $MAX_NUM_OF_ROWS;
-        $callback->("${suppressed_count} more...");
+        $callback->("${suppressed_count} more... ${url}");
     }
 
     $dbh->disconnect();
